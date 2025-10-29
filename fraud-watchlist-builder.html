@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fraud Watchlist Builder — True Buddy Consulting</title>
+
+  <!-- Web font for consistent rendering -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent-1:#0b6b8f;
+      --accent-2:#2aa0ff;
+      --card-bg: linear-gradient(180deg,#fff,#f8fcff);
+      --container-bg: linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+      --text:#122;
+    }
+
+    html,body{height:100%;margin:0;font-family:"Inter",Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#e8f6ff 0%,#f7fbff 45%,#ffffff 100%);color:var(--text)}
+    .app {
+      max-width:1300px;margin:18px auto;padding:12px;display:grid;grid-template-columns:420px 1fr;gap:18px;
+    }
+    /* Left editor panel */
+    .panel {
+      background:#fff;border-radius:12px;padding:14px;box-shadow:0 10px 30px rgba(8,30,50,.06);
+      display:flex;flex-direction:column;gap:10px;min-height:520px;overflow:auto;
+    }
+    .panel h3{margin:0;font-size:16px}
+    label{font-size:13px;color:#234;margin-bottom:6px;display:block}
+    input[type="text"], textarea, select {
+      width:100%;padding:10px;border-radius:8px;border:1px solid rgba(10,20,30,.06);font-size:14px;
+      box-sizing:border-box;font-family:inherit;
+    }
+    textarea{min-height:220px;resize:vertical;font-family:monospace}
+    .row{display:flex;gap:8px}
+    .row > * {flex:1}
+    .controls {display:flex;gap:8px}
+    button.btn {
+      background:var(--accent-1);color:#fff;border:0;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;
+      box-shadow:0 6px 18px rgba(11,107,143,.12)
+    }
+    button.ghost {background:transparent;border:1px solid rgba(11,107,143,.12);color:var(--accent-1);box-shadow:none}
+    .hint{font-size:12px;color:#567}
+
+    /* Preview area (right) uses the polished report styles */
+    .preview-wrap {
+      display:flex;flex-direction:column;gap:14px;
+    }
+    .preview {
+      border-radius:12px;overflow:hidden;background:var(--container-bg);box-shadow:0 12px 40px rgba(8,30,50,.08);
+    }
+
+    /* Report template */
+    .container {
+      max-width:1100px;margin:0 auto;background:var(--container-bg);border-radius:12px;overflow:hidden;
+    }
+    header {
+      display:flex;gap:16px;align-items:center;padding:22px 28px;background:linear-gradient(90deg,var(--accent-1) 0%,var(--accent-2) 60%);color:#fff;
+    }
+    .logo {width:96px;height:96px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:8px}
+    .logo img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,.2))}
+    h1{margin:0;font-size:20px;color:#fff;font-weight:700}
+    p.lead{margin:6px 0 0;color:rgba(255,255,255,.94);font-size:13px}
+    .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .chip{background:rgba(255,255,255,.12);padding:6px 10px;border-radius:10px;font-size:13px;color:#fff}
+
+    .content-wrap{padding:22px 28px 28px}
+    .controls-preview{display:flex;gap:10px;margin-bottom:14px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .card{padding:14px;border-radius:10px;border:1px solid rgba(10,20,30,.04);background:var(--card-bg)}
+    .card h2{margin:0 0 8px;font-size:16px;color:#062b3a}
+    .item{display:flex;gap:12px;padding:10px 6px;border-bottom:1px dashed rgba(10,20,30,.06);align-items:flex-start}
+    .item:last-child{border-bottom:none}
+    .date{width:92px;font-size:13px;color:#5a6b74}
+    .title{font-weight:700;margin:0 0 6px;font-size:14px;color:#0d2a36}
+    .metaSmall{font-size:13px;color:#556b75;margin-bottom:6px}
+    .source{font-size:13px;color:var(--accent-1);text-decoration:none}
+    footer{padding:18px 28px;background:linear-gradient(90deg,var(--accent-1) 0%,var(--accent-2) 60%);color:#fff;display:flex;justify-content:space-between;align-items:center}
+    .small{font-size:12px;color:rgba(255,255,255,.92)}
+
+    /* PRINT: preserve colors and layout */
+    @media print {
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important }
+      .controls-preview, .controls { display:none !important }
+      .grid { grid-template-columns:1fr 1fr !important }
+    }
+    @page { size:A4; margin:12mm }
+
+    /* Responsive */
+    @media (max-width:1000px) {
+      .app {grid-template-columns:1fr; padding:12px}
+      .preview {order:2}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- LEFT: No-code editor -->
+    <div class="panel" role="region" aria-label="Editor">
+      <h3>Fraud Watchlist Builder — No code</h3>
+      <div class="hint">Paste the rows below (CSV). First line is header. Example template is prefilled — just replace data.</div>
+
+      <label>Report Title</label>
+      <input id="title" type="text" value="True Buddy Consulting Pvt Ltd — Fraud Watchlist" />
+
+      <div class="row">
+        <div>
+          <label>Period (display)</label>
+          <input id="period" type="text" value="18 Oct 2025 — 24 Oct 2025" />
+        </div>
+        <div>
+          <label>Categories</label>
+          <input id="categories" type="text" value="IPR / Cyber / Employee / Vendor / Theft / Online Fraud" />
+        </div>
+      </div>
+
+      <label>Compiled by</label>
+      <input id="compiled" type="text" value="True Buddy Consulting Pvt Ltd" />
+
+      <label style="margin-top:6px">Paste CSV rows (very simple CSV):</label>
+      <textarea id="csvInput" spellcheck="false">
+Section,Date,Title,Category,Summary,Source
+International,23 Oct 2025,Rivian to pay $250M to settle IPO fraud lawsuit,"Securities · $250M","Class-action settlement over allegations investors were misled on pricing at IPO.","https://www.reuters.com/sustainability/boards-policy-regulation/rivian-agrees-pay-250-million-settle-ipo-fraud-lawsuit-2025-10-23/"
+International,21 Oct 2025,Spain clears extradition of ex-UN official in bribery & wire-fraud case,"Bribery / Wire fraud","High Court approves U.S. request to try former UNOPS executive in SDNY.","https://www.reuters.com/legal/government/spanish-court-orders-ex-un-official-extradited-us-bribery-case-2025-10-21/"
+India,23 Oct 2025,₹70 crore GST identity-theft fraud unearthed in Delhi,"GST / Identity theft — ₹70 crore","Scammers allegedly ran bogus GST sales using PAN & Aadhaar of two victims.","https://timesofindia.indiatimes.com/city/delhi/gst-scammers-pocket-rs-70-crore-by-stealing-2-mens-personal-details/articleshow/124769234.cms"
+India,19 Oct 2025,EOW arrests key accused in ₹1,000 crore pan-India ponzi scam,"Ponzi / Investment — ₹1,000 crore","Hedgex Fund LLP probe: >3 lakh investors across 10 states affected.","https://timesofindia.indiatimes.com/city/bhubaneswar/eow-arrests-key-accused-in-rs-1000-crore-ponzi-scam-spanning-10-states/articleshow/124677291.cms"
+      </textarea>
+
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="btnPreview">Preview</button>
+        <button class="ghost" id="btnLoadSample">Load Sample</button>
+        <div style="flex:1"></div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(10,20,30,.04)" />
+
+      <div>
+        <h4 style="margin:6px 0 8px">Quick tips</h4>
+        <div class="hint">• Each row must have 6 columns in this order: <strong>Section,Date,Title,Category,Summary,Source</strong></div>
+        <div class="hint">• Use full absolute URLs for the Source column to make links clickable.</div>
+        <div class="hint">• To create new sections, use the Section column value (e.g., "International" or "India").</div>
+        <div class="hint">• If a cell contains commas, wrap it in double quotes.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Preview -->
+    <div class="preview-wrap">
+
+      <div class="preview" id="previewArea" role="region" aria-label="Preview">
+        <!-- Initial preview rendered on load (JS will fill this) -->
+        <div class="container" id="reportContent" aria-live="polite">
+          <!-- header + content injected by JS -->
+        </div>
+      </div>
+
+      <!-- Below preview controls (download/print CSV) -->
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="ghost" id="btnDownloadHTML">Download HTML</button>
+        <button class="ghost" id="btnDownloadCSV">Download CSV</button>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+/*
+  No-code CSV -> report renderer
+  - Users paste CSV into textarea
+  - Click Preview to render the exact report UI in the right pane
+  - Print button is part of rendered report (so print CSS applies)
+  - "Download CSV" allows exporting the current dataset
+*/
+
+/* Utility: simple CSV parser (handles quoted fields with commas) */
+function parseCSV(text) {
+  const rows = [];
+  let cur = '';
+  let row = [];
+  let inQuotes = false;
+  for (let i=0;i<text.length;i++){
+    const ch = text[i];
+    const nxt = text[i+1];
+    if (ch === '"' ) {
+      if (inQuotes && nxt === '"') { cur += '"'; i++; continue; } // escaped quote
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === ',' && !inQuotes) { row.push(cur); cur=''; continue; }
+    if ((ch === '\n' || ch === '\r') && !inQuotes) {
+      // end of row (handle CRLF)
+      if (cur !== '' || row.length>0) {
+        row.push(cur);
+        rows.push(row);
+        row = [];
+        cur='';
+      }
+      // skip possible \n after \r
+      if (ch === '\r' && text[i+1] === '\n') i++;
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur !== '' || row.length>0) {
+    row.push(cur);
+    rows.push(row);
+  }
+  return rows;
+}
+
+/* Build report HTML given header info and array of entries */
+function buildReportHTML({title,period,categories,compiled}, entries) {
+  // Group by section
+  const groups = {};
+  entries.forEach(e=>{
+    const section = (e[0] || 'General').trim();
+    const date = (e[1] || '').trim();
+    const titleTxt = (e[2] || '').trim();
+    const meta = (e[3] || '').trim();
+    const summary = (e[4] || '').trim();
+    const source = (e[5] || '').trim();
+    if (!groups[section]) groups[section]=[];
+    groups[section].push({date,title:titleTxt,meta,summary,source});
+  });
+
+  // Template header + controls + groups
+  const headerHTML = `
+  <header>
+    <div class="logo">
+      <!-- Embedded minimal logo placeholder -->
+      <img alt="True Buddy logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG4AAAAyCAYAAABNOylbAAAABHNCSVQICAgIfAhkiAAACNJJREFUeJztnD1sHUUUx2+v7iCC7FYBoqIFCk6gj8GggMC4bZ3YG4bNboTtj1bEP3cSL4bYpCvgZ9xFHZRpHagW4S2O7YRCMphcClhhNC1eG8YAKcEUBIgqABgIoMi0LUHqkuqfbnP8e++u1L2p7aXd1Up7XvOnXv3e/Zs+1r7EheEowx2hgGuEJ2AgHA4Dazl9wBaQbnzL4l4Dq/BxPqfoFXT3tWmKQuBIM00POc5Bgf8AFY41JmYYN7MBZ5qFhRgdQdRX/EXA1qvAA/0MDzG0mgXQ7vOwHHxv6yq6TGE5BccWvgbkZ7NxnBvZyMrObAnMrqv3Pyb3B6A6ZK0WEAODeCxdAGhptQfBymOkfk7cIrM0HoBgJ/cGk/tCM+Y9XKMTHAHq7VzGnOYuh8Am5n8j8+XhMTtQGrVkQBLh6oKr8q1r4KZeQR4/CAfLwEUJjwwb2Ho/n+exv7lZ1MQK2Kj2oH9PUCB5ZBoAQ9N3KrL4HvNQ5qPgjDnB63TV1W3YjEwAyi3CJzloTTA+i1fVft0IhtwHgpmIK1zHND9QCTuULSgPrw+Bx9NBs06kM6B3QnQ+WJ+TECPnSwJv70BI5tsO2DbNRBfqkFT4Elyqu0/TDfDkHcXvGAfLRcxy8GTjsM9luztw9zmMYVZTE5sOAkq7pL3OWWwdcPk2hjYh4+AEGqvLq4Bi4MryF6vAytMZOPUGr/PqE8RgIo0Gm5FMBuSmM9gtHT3Sz7ED/O9qX3wD63gaTW0zXxHAikCboZ85dUIbPAfPRiNKKmxZlXUff4lDSmAA3sQVoHLzAHAVdkDrgtu3Ai5ai8DF0d9VDCfEA8FHIg9Dk6FdsCFwPqA29RMGXDV9ZwAgHZAhTvMoG75ZVmOru7K25Fd+PkbMAhcdH6VfA9c+WQZKZ9j+6vh/0BA1Izz8pIBsV0LeKe7dbZgrFo5v+rBIHR6qrO/wj2gJ6sV9HYo8It3AnYfKPuQJo8FRDcKs7oLKtiPq+i/p6Bv1biS8uqP5Py7hUAW8GyFaKh/sYNn8a+ZyOY4VXb9sHKuA1eAFyqIXQHeLDL8wJriJKDcnOplAvurR0B7imqGy7gfMKoN0i5gFcNe0Az6r9MgUDrhihP05cXKfHBKf0Xj1cX6PfxW2AzfKuK6YYIsDqzxB87BcNYxdQNo3sBdzn4zhyubDAvlZslU10YZYGYRYkrcBvcd12nRkwAX6aywr4FcZUTtpowx+k6gN7KNGO26nSNgY/UA0o/OjluFvdAsO80YAr8sro8ncwNQ90AfjlzUPDKQj36QplUY4E98Dhkg7H4Agyjb5HW9XxXXgGmALbWqlROyg0Lz0gQ1TZ2nRuEnAb81eL+A3oqI3AZW+S+E1hQycjYXPsBTfiYFOogR7g2D3Z9Dtxqyl8sXDU/o89oX2ZyT74HvCo1uCD+V4SV8ArpLDdBdqLM0/suxGdfAXxP9gbK9TznlYCG/JbgXPD2A9AnJQ9sfoKo9cbrubqk5Q8o5tqro+O4/RGSR7YHYVYGGnTu5MfJnh3RTm1g3soWjZUL8HZ6Sk81b7Q5zI6/Deh3+Tz/vkG/K43UBm6nmLXDb6JmB3qOZ8wEEsO1z/gPwbCVcGySKzKAAAAAElFTkSuQmCC" />
+    </div>
+    <div style="flex:1">
+      <h1 id="r_title"></h1>
+      <p class="lead"><span id="r_period"></span> · Categories: <span id="r_categories"></span></p>
+      <div class="meta"><div class="chip" id="r_compiled"></div><div class="chip">International & India highlights</div></div>
+    </div>
+  </header>
+
+  <div class="content-wrap">
+    <div class="controls-preview">
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn" onclick="downloadCSVFromReport()">Download CSV</button>
+      <button class="ghost" onclick="window.scrollTo(0,document.body.scrollHeight)">Jump to Footer</button>
+    </div>
+
+    <div class="grid" id="groupsContainer"></div>
+  </div>
+
+  <footer>
+    <div class="small">Prepared by <strong id="f_compiled"></strong> · Period: <span id="f_period"></span></div>
+    <div class="small">Contact: contact@tbcpl.co.in</div>
+  </footer>
+  `;
+
+  // Build groups HTML
+  let groupsHTML = '';
+  for (const section of Object.keys(groups)) {
+    const items = groups[section];
+    groupsHTML += `<section class="card" aria-label="${escapeHTML(section)}"><h2>${escapeHTML(section)} — Notable frauds (${items.length})</h2>`;
+    items.forEach(it=>{
+      groupsHTML += `
+      <div class="item">
+        <div class="date">${escapeHTML(it.date)}</div>
+        <div class="content">
+          <div class="title">${escapeHTML(it.title)}</div>
+          <div class="metaSmall">${escapeHTML(it.meta)}</div>
+          <div>${escapeHTML(it.summary)}</div>
+          ${ it.source ? `<div style="margin-top:6px"><a class="source" target="_blank" href="${escapeAttr(it.source)}">Source</a></div>` : '' }
+        </div>
+      </div>
+      `;
+    });
+    groupsHTML += `</section>`;
+  }
+
+  // Combine everything
+  return `<div class="container">${headerHTML}<div class="content-wrap">${/* controls already in header HTML - duplicate avoided */ ''}</div>${groupsHTML}<footer><div class="small">Prepared by <strong>${escapeHTML(compiled)}</strong> · Period: ${escapeHTML(period)}</div><div class="small">Contact: contact@tbcpl.co.in</div></footer></div>`;
+}
+
+/* Utilities for safe HTML */
+function escapeHTML(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function escapeAttr(s){ if(!s) return ''; return s.replaceAll('"','%22').replaceAll("'",'%27'); }
+
+/* Render report into preview pane */
+function renderPreview() {
+  const title = document.getElementById('title').value.trim();
+  const period = document.getElementById('period').value.trim();
+  const categories = document.getElementById('categories').value.trim();
+  const compiled = document.getElementById('compiled').value.trim();
+  const raw = document.getElementById('csvInput').value.trim();
+
+  // Parse CSV rows
+  const rows = parseCSV(raw);
+  if (rows.length === 0) {
+    alert('No data found in CSV area.');
+    return;
+  }
+  // If first row is header, remove it (case-insensitive)
+  const headerRow = rows[0].map(c=> (c||'').trim().toLowerCase());
+  const isHeader = headerRow[0] === 'section' || headerRow.includes('title') && headerRow.includes('date');
+  const dataRows = isHeader ? rows.slice(1) : rows;
+
+  // Build report content
+  const reportHTML = buildReportHTML({title,period,categories,compiled}, dataRows);
+
+  // Put into preview DOM
+  const reportContent = document.getElementById('reportContent');
+  reportContent.innerHTML = reportHTML;
+
+  // Fill header text nodes inside the rendered header
+  document.getElementById('r_title').innerText = title;
+  document.getElementById('r_period').innerText = 'Period: ' + period;
+  document.getElementById('r_categories').innerText = categories;
+  document.getElementById('r_compiled').innerText = compiled;
+  document.getElementById('f_compiled').innerText = compiled;
+  document.getElementById('f_period').innerText = period;
+
+  // Smooth scroll preview into view on small screens
+  document.querySelector('.preview').scrollIntoView({behavior:'smooth'});
+}
+
+/* Download CSV from what is currently in textarea */
+function downloadCSVRaw() {
+  const text = document.getElementById('csvInput').value;
+  const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(document.getElementById('title').value||'report').replace(/\s+/g,'_')}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+/* Download CSV based on currently parsed content (cleaned) */
+function downloadCSVFromReport() {
+  const raw = document.getElementById('csvInput').value.trim();
+  const rows = parseCSV(raw);
+  const headerRow = rows[0].map(c=> (c||'').trim().toLowerCase());
+  const isHeader = headerRow[0] === 'section' || headerRow.includes('title') && headerRow.includes('date');
+  const dataRows = isHeader ? rows.slice(1) : rows;
+  // Build CSV string with header
+  const header = ['Section','Date','Title','Category/Value','Summary','Source'];
+  let csv = header.join(',') + '\n';
+  dataRows.forEach(r=>{
+    const line = r.map(cell => `"${(cell||'').replace(/"/g,'""')}"`).join(',');
+    csv += line + '\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(document.getElementById('title').value||'report').replace(/\s+/g,'_')}_data.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+/* Download the rendered single-file HTML (preview) */
+function downloadRenderedHTML() {
+  const content = document.getElementById('reportContent').innerHTML;
+  const fullHtml = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${(document.getElementById('title').value||'Report').replace(/</g,'')}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Minimal styles copied from builder for the exported page */
+:root{--accent-1:#0b6b8f;--accent-2:#2aa0ff}
+body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;background:#fff;color:#122}
+.container{max-width:1100px;margin:28px auto;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)}
+header{display:flex;gap:16px;align-items:center;padding:22px 28px;background:linear-gradient(90deg,var(--accent-1) 0%,var(--accent-2) 60%);color:#fff}
+.logo{width:96px;height:96px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:8px}
+.logo img{width:100%;height:100%;object-fit:contain;display:block}
+h1{margin:0;font-size:20px}
+.lead{margin:6px 0 0;font-size:13px;color:rgba(255,255,255,.94)}
+.meta{display:flex;gap:10px;margin-top:8px}
+.chip{background:rgba(255,255,255,.12);padding:6px 10px;border-radius:10px;font-size:13px;color:#fff}
+.content-wrap{padding:22px 28px 28px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{padding:14px;border-radius:10px;border:1px solid rgba(10,20,30,.04);background:linear-gradient(180deg,#fff,#f8fcff)}
+.card h2{margin:0 0 8px;font-size:16px;color:#062b3a}
+.item{display:flex;gap:12px;padding:10px 6px;border-bottom:1px dashed rgba(10,20,30,.06)}
+.item:last-child{border-bottom:none}
+.date{width:92px;font-size:13px;color:#5a6b74}
+.title{font-weight:700;margin:0 0 6px;font-size:14px;color:#0d2a36}
+.metaSmall{font-size:13px;color:#556b75;margin-bottom:6px}
+.source{font-size:13px;color:var(--accent-1);text-decoration:none}
+footer{padding:18px 28px;background:linear-gradient(90deg,var(--accent-1) 0%,var(--accent-2) 60%);color:#fff;display:flex;justify-content:space-between}
+.small{font-size:12px}
+@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.controls-preview{display:none}}
+@page{size:A4;margin:12mm}
+</style>
+</head><body><div class="container">${content}</div></body></html>`;
+  const blob = new Blob([fullHtml], {type:'text/html;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = `${(document.getElementById('title').value||'report').replace(/\s+/g,'_')}.html`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+/* Hook up buttons */
+document.getElementById('btnPreview').addEventListener('click', renderPreview);
+document.getElementById('btnLoadSample').addEventListener('click', ()=>{
+  document.getElementById('csvInput').value = `Section,Date,Title,Category,Summary,Source
+International,23 Oct 2025,Rivian to pay $250M to settle IPO fraud lawsuit,"Securities · $250M","Class-action settlement over allegations investors were misled on pricing at IPO.","https://www.reuters.com/sustainability/boards-policy-regulation/rivian-agrees-pay-250-million-settle-ipo-fraud-lawsuit-2025-10-23/"
+International,21 Oct 2025,Spain clears extradition of ex-UN official in bribery & wire-fraud case,"Bribery / Wire fraud","High Court approves U.S. request to try former UNOPS executive in SDNY.","https://www.reuters.com/legal/government/spanish-court-orders-ex-un-official-extradited-us-bribery-case-2025-10-21/"
+India,23 Oct 2025,₹70 crore GST identity-theft fraud unearthed in Delhi,"GST / Identity theft — ₹70 crore","Scammers allegedly ran bogus GST sales using PAN & Aadhaar of two victims.","https://timesofindia.indiatimes.com/city/delhi/gst-scammers-pocket-rs-70-crore-by-stealing-2-mens-personal-details/articleshow/124769234.cms"
+India,19 Oct 2025,EOW arrests key accused in ₹1,000 crore pan-India ponzi scam,"Ponzi / Investment — ₹1,000 crore","Hedgex Fund LLP probe: >3 lakh investors across 10 states affected.","https://timesofindia.indiatimes.com/city/bhubaneswar/eow-arrests-key-accused-in-rs-1000-crore-ponzi-scam-spanning-10-states/articleshow/124677291.cms"`;
+  alert('Sample dataset loaded. Click Preview.');
+});
+
+document.getElementById('btnDownloadCSV').addEventListener('click', downloadCSVRaw);
+document.getElementById('btnDownloadHTML').addEventListener('click', downloadRenderedHTML);
+
+/* Initial render from prefilled data */
+renderPreview();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
